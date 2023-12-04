@@ -104,8 +104,7 @@ func checkSafety(index int, span int, cellRow []string, higher []string, lower [
 
 func getGearIndex(searchSpace []string, index int) int {
 	gearCell := subArrayGearFinder(searchSpace)
-	if gearCell > 0 {
-		//fmt.Println(searchSpace, gearCell)
+	if gearCell >= 0 {
 		return gearCell + index + 1
 	}
 	return -1
@@ -124,7 +123,6 @@ func checkGears(row, index int, span int, cellRow []string, higher []string, low
 	}
 	l := getGearIndex(searchSpaceL, iStart)
 	if l >= 0 {
-		fmt.Println(l, row)
 		return l, row + 1
 	}
 	return -1, -1
@@ -150,7 +148,6 @@ type Gears struct {
 }
 
 func getGearRatio(gears []Gears) {
-	fmt.Println(gears)
 	var ratios [][]int
 	var gearLoc []GearPos
 	for _, gear := range gears {
@@ -158,32 +155,44 @@ func getGearRatio(gears []Gears) {
 			gearLoc = append(gearLoc, gear.gear)
 			ratio := []int{gear.number}
 			ratios = append(ratios, ratio)
-		}
-		for i, loc := range gearLoc {
-			if gear.gear.column == loc.column && gear.gear.row == loc.row {
-				ratios[i] = append(ratios[i], gear.number)
-			} else {
+		} else {
+			appended := false
+			for i, loc := range gearLoc {
+				if gear.gear.column == loc.column && gear.gear.row == loc.row {
+					ratios[i] = append(ratios[i], gear.number)
+					appended = true
+				}
+			}
+			if !appended {
 				gearLoc = append(gearLoc, gear.gear)
 				ratio := []int{gear.number}
 				ratios = append(ratios, ratio)
+
 			}
 		}
 	}
-	fmt.Println(gearLoc)
-	fmt.Println(ratios)
+	var ratioGears []int
+	for _, ratio := range ratios {
+		if len(ratio) > 1 {
+			ratioGears = append(ratioGears, ratio[0]*ratio[1])
+		}
+	}
+	powers := 0
+	for _, gearPower := range ratioGears {
+		powers += gearPower
+	}
+	fmt.Println(powers)
 }
 
 func checkAllArrays(numericArrays [][]string, allArrays [][]string) int {
 	lastRow := len(allArrays) - 1
-	//var validNums []int
+	var validNums []int
 	var validGears []Gears
 	for i, row := range numericArrays {
-		//fmt.Println(row)
 		maskedIndex := 0
 		for _, cell := range row {
 			numValue := getNums(cell)
 			if numValue > 0 {
-				//fmt.Println(numValue)
 				var higher []string
 				var lower []string
 				if i != 0 {
@@ -192,10 +201,10 @@ func checkAllArrays(numericArrays [][]string, allArrays [][]string) int {
 				if i != lastRow {
 					lower = allArrays[i+1]
 				}
-				// result := checkSafety(maskedIndex, len(cell), allArrays[i], higher, lower)
-				// if !result {
-				// 	validNums = append(validNums, numValue)
-				// }
+				result := checkSafety(maskedIndex, len(cell), allArrays[i], higher, lower)
+				if !result {
+					validNums = append(validNums, numValue)
+				}
 				gear, gearRow := checkGears(i, maskedIndex, len(cell), allArrays[i], higher, lower)
 				if gear >= 0 {
 					validGears = append(validGears, Gears{number: numValue, gear: GearPos{row: gearRow, column: gear}})
@@ -209,13 +218,12 @@ func checkAllArrays(numericArrays [][]string, allArrays [][]string) int {
 
 		}
 	}
-	//return sum(validNums)
 	getGearRatio(validGears)
-	return 0
+	return sum(validNums)
 }
 
 func main() {
-	file, err := os.Open("Day3/test_input.txt")
+	file, err := os.Open("input.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -225,7 +233,6 @@ func main() {
 
 	var schematicArrays []string
 	for scanner.Scan() {
-		//fmt.Println(scanner.Text())
 		schematicArrays = append(schematicArrays, scanner.Text())
 	}
 	var treatedArrays [][]string
