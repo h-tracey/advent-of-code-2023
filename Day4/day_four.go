@@ -46,9 +46,22 @@ func (sc ScratchCard) cardScore() int {
 	return score
 }
 
-func (sc ScratchCard) cardCopies() (int, int) {
-	sc.computeWins()
-	return sc.cardId, len(sc.wins)
+func (sc ScratchCard) cardCopies(baseList []ScratchCard) []ScratchCard {
+	var copies []ScratchCard
+	getFirst := func(index int) ScratchCard {
+		for _, card := range baseList {
+			if card.cardId == index {
+				return card
+			}
+		}
+		return ScratchCard{}
+	}
+	for i, _ := range sc.wins {
+		copy := getFirst(sc.cardId + i + 1)
+		copies = append(copies, copy)
+	}
+
+	return copies
 }
 
 type ScratchCardBuilder struct {
@@ -99,28 +112,26 @@ func countPoints(cards []ScratchCard) int {
 }
 
 func CountCopies(cards []ScratchCard) {
-	fmt.Println(len(cards))
-	var cardCopies []ScratchCard
-	for _, card := range cards {
-		id, copies := card.cardCopies()
-		for i := 0; i < copies; i++ {
-			copyIndex := id + i + 1
-			for _, cardToCopy := range cards {
-				if cardToCopy.cardId == copyIndex {
-					cardCopies = append(cardCopies, cards[copyIndex])
-				}
-			}
-
+	var allcards []ScratchCard = cards
+	var usedCards []int
+	var continueLoop bool = true
+	for continueLoop {
+		card := allcards[0]
+		if len(allcards) != 1 {
+			allcards = allcards[1:]
+		} else {
+			continueLoop = false
 		}
+		card.computeWins()
+		allcards = append(allcards, card.cardCopies(allcards)...)
+		usedCards = append(usedCards, card.cardId)
 	}
-	fmt.Println(len(cardCopies))
-	if len(cardCopies) > 0 {
-		CountCopies(cardCopies)
-	}
+	fmt.Println(len(usedCards))
+
 }
 
 func main() {
-	file, err := os.Open("test_input.txt")
+	file, err := os.Open("input.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
